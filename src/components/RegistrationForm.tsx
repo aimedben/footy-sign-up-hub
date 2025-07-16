@@ -1,17 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus, Users, Trophy } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Player {
   id: string;
   nom: string;
   prenom: string;
   age: number;
-  dateInscription: string;
+  telephone: string;
+  team_id?: string;
+  group_id?: string;
+  date_inscription: string;
+}
+
+interface Team {
+  id: string;
+  name: string;
+}
+
+interface Group {
+  id: string;
+  name: string;
 }
 
 interface RegistrationFormProps {
@@ -22,16 +37,39 @@ export function RegistrationForm({ onPlayerAdded }: RegistrationFormProps) {
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
   const [age, setAge] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const [teamId, setTeamId] = useState<string>("");
+  const [groupId, setGroupId] = useState<string>("");
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchTeamsAndGroups();
+  }, []);
+
+  const fetchTeamsAndGroups = async () => {
+    try {
+      const [teamsResult, groupsResult] = await Promise.all([
+        supabase.from('teams').select('*').order('name'),
+        supabase.from('groups').select('*').order('name')
+      ]);
+
+      if (teamsResult.data) setTeams(teamsResult.data);
+      if (groupsResult.data) setGroups(groupsResult.data);
+    } catch (error) {
+      console.error('Error fetching teams and groups:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!nom || !prenom || !age) {
+    if (!nom || !prenom || !age || !telephone) {
       toast({
         title: "Erreur",
-        description: "Veuillez remplir tous les champs",
+        description: "Veuillez remplir tous les champs obligatoires",
         variant: "destructive",
       });
       return;
@@ -50,16 +88,33 @@ export function RegistrationForm({ onPlayerAdded }: RegistrationFormProps) {
     setIsLoading(true);
 
     try {
-      const newPlayer: Player = {
-        id: crypto.randomUUID(),
+      const playerData = {
         nom: nom.trim(),
         prenom: prenom.trim(),
         age: ageNumber,
-        dateInscription: new Date().toISOString(),
+        telephone: telephone.trim(),
+        team_id: teamId || null,
+        group_id: groupId || null,
       };
 
-      // Simulation d'une sauvegarde (remplacé par Supabase plus tard)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase
+        .from('players')
+        .insert([playerData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newPlayer: Player = {
+        id: data.id,
+        nom: data.nom,
+        prenom: data.prenom,
+        age: data.age,
+        telephone: data.telephone,
+        team_id: data.team_id,
+        group_id: data.group_id,
+        date_inscription: data.date_inscription,
+      };
       
       onPlayerAdded(newPlayer);
       
@@ -72,7 +127,11 @@ export function RegistrationForm({ onPlayerAdded }: RegistrationFormProps) {
       setNom("");
       setPrenom("");
       setAge("");
+      setTelephone("");
+      setTeamId("");
+      setGroupId("");
     } catch (error) {
+      console.error('Error inserting player:', error);
       toast({
         title: "Erreur",
         description: "Une erreur s'est produite lors de l'inscription",
@@ -158,6 +217,51 @@ export function RegistrationForm({ onPlayerAdded }: RegistrationFormProps) {
                     required
                     className="h-12"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="telephone">Téléphone *</Label>
+                  <Input
+                    id="telephone"
+                    type="tel"
+                    placeholder="Votre numéro de téléphone"
+                    value={telephone}
+                    onChange={(e) => setTelephone(e.target.value)}
+                    required
+                    className="h-12"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="team">Équipe (optionnel)</Label>
+                  <Select value={teamId} onValueChange={setTeamId}>
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Choisir une équipe" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="group">Groupe (optionnel)</Label>
+                  <Select value={groupId} onValueChange={setGroupId}>
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Choisir un groupe" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {groups.map((group) => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <Button 

@@ -14,7 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      players: {
+        Row: {
+          age: number
+          created_at: string
+          date_inscription: string
+          group_id: string | null
+          id: string
+          nom: string
+          prenom: string
+          team_id: string | null
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          age: number
+          created_at?: string
+          date_inscription?: string
+          group_id?: string | null
+          id?: string
+          nom: string
+          prenom: string
+          team_id?: string | null
+          telephone: string
+          updated_at?: string
+        }
+        Update: {
+          age?: number
+          created_at?: string
+          date_inscription?: string
+          group_id?: string | null
+          id?: string
+          nom?: string
+          prenom?: string
+          team_id?: string | null
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

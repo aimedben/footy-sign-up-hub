@@ -10,7 +10,10 @@ interface Player {
   nom: string;
   prenom: string;
   age: number;
-  dateInscription: string;
+  telephone: string;
+  team_id?: string;
+  group_id?: string;
+  date_inscription: string;
 }
 
 type ViewMode = "registration" | "admin-login" | "admin-dashboard";

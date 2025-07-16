@@ -145,14 +145,6 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
               </Button>
             </form>
 
-            {/* Credentials info for demo */}
-            <div className="mt-6 p-4 bg-info/10 rounded-lg border border-info/20">
-              <h4 className="font-medium text-info mb-2">Identifiants de démonstration :</h4>
-              <p className="text-sm text-info/80">
-                <strong>Utilisateur :</strong> admin<br />
-                <strong>Mot de passe :</strong> football2024
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>

@@ -1,94 +1,136 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Users, 
-  Trophy, 
-  Calendar, 
-  Trash2, 
-  Edit,
-  Shield,
-  LogOut,
-  Search,
-  Filter
-} from "lucide-react";
+import { Search, Users, UserMinus, Calendar, LogOut, Trophy, Filter, Phone, Users2, Hash } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Player {
   id: string;
   nom: string;
   prenom: string;
   age: number;
-  dateInscription: string;
+  telephone: string;
+  team_id?: string;
+  group_id?: string;
+  date_inscription: string;
+  teams?: { name: string };
+  groups?: { name: string };
+}
+
+interface Team {
+  id: string;
+  name: string;
+}
+
+interface Group {
+  id: string;
+  name: string;
 }
 
 interface AdminDashboardProps {
   players: Player[];
-  onDeletePlayer: (id: string) => void;
+  onDeletePlayer: (playerId: string) => void;
   onLogout: () => void;
 }
 
-export function AdminDashboard({ players, onDeletePlayer, onLogout }: AdminDashboardProps) {
+export function AdminDashboard({ players: initialPlayers, onDeletePlayer, onLogout }: AdminDashboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [ageFilter, setAgeFilter] = useState("");
+  const [filterAge, setFilterAge] = useState("");
+  const [filterTeam, setFilterTeam] = useState("");
+  const [filterGroup, setFilterGroup] = useState("");
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchPlayersAndFilters();
+  }, []);
+
+  const fetchPlayersAndFilters = async () => {
+    try {
+      const [playersResult, teamsResult, groupsResult] = await Promise.all([
+        supabase
+          .from('players')
+          .select(`
+            *,
+            teams (name),
+            groups (name)
+          `)
+          .order('date_inscription', { ascending: false }),
+        supabase.from('teams').select('*').order('name'),
+        supabase.from('groups').select('*').order('name')
+      ]);
+
+      if (playersResult.data) setPlayers(playersResult.data);
+      if (teamsResult.data) setTeams(teamsResult.data);
+      if (groupsResult.data) setGroups(groupsResult.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
 
   const filteredPlayers = players.filter(player => {
     const matchesSearch = 
       player.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.prenom.toLowerCase().includes(searchTerm.toLowerCase());
+      player.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      player.telephone.includes(searchTerm);
     
-    const matchesAge = ageFilter === "" || 
-      (ageFilter === "young" && player.age < 25) ||
-      (ageFilter === "middle" && player.age >= 25 && player.age < 35) ||
-      (ageFilter === "older" && player.age >= 35);
-
-    return matchesSearch && matchesAge;
+    const matchesAge = filterAge === "" || 
+      (filterAge === "young" && player.age <= 25) ||
+      (filterAge === "senior" && player.age > 25);
+    
+    const matchesTeam = filterTeam === "" || player.team_id === filterTeam;
+    const matchesGroup = filterGroup === "" || player.group_id === filterGroup;
+    
+    return matchesSearch && matchesAge && matchesTeam && matchesGroup;
   });
 
-  const handleDeletePlayer = (player: Player) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${player.prenom} ${player.nom} ?`)) {
-      onDeletePlayer(player.id);
-      toast({
-        title: "Joueur supprimé",
-        description: `${player.prenom} ${player.nom} a été retiré du tournoi`,
-        variant: "destructive",
-      });
+  const handleDelete = async (playerId: string, playerName: string) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${playerName} ?`)) {
+      try {
+        const { error } = await supabase
+          .from('players')
+          .delete()
+          .eq('id', playerId);
+
+        if (error) throw error;
+
+        setPlayers(prev => prev.filter(p => p.id !== playerId));
+        onDeletePlayer(playerId);
+        toast({
+          title: "Joueur supprimé",
+          description: `${playerName} a été retiré du tournoi`,
+        });
+      } catch (error) {
+        console.error('Error deleting player:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer le joueur",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getAgeGroup = (age: number) => {
-    if (age < 25) return { label: "Jeune", color: "bg-blue-500" };
-    if (age < 35) return { label: "Adulte", color: "bg-green-500" };
-    return { label: "Senior", color: "bg-orange-500" };
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/5">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-accent py-8">
+      <div className="bg-gradient-to-r from-primary to-accent py-12">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-primary-foreground" />
+              <Trophy className="h-10 w-10 text-primary-foreground animate-bounce-in" />
               <div>
-                <h1 className="text-3xl font-bold text-primary-foreground">
+                <h1 className="text-4xl font-bold text-primary-foreground animate-fade-in">
                   Administration
                 </h1>
-                <p className="text-primary-foreground/80">
+                <p className="text-xl text-primary-foreground/90 animate-fade-in">
                   Gestion du tournoi de football
                 </p>
               </div>
@@ -96,189 +138,199 @@ export function AdminDashboard({ players, onDeletePlayer, onLogout }: AdminDashb
             <Button
               onClick={onLogout}
               variant="outline"
-              className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10"
+              className="bg-background/10 border-primary-foreground/20 text-primary-foreground hover:bg-background/20"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4 mr-2" />
               Déconnexion
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="container mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+        <div className="animate-fade-in">
+          {/* Stats Cards */}
+          <div className="grid md:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <Trophy className="h-8 w-8 text-primary mr-4" />
                 <div>
-                  <p className="text-muted-foreground">Total Joueurs</p>
-                  <p className="text-3xl font-bold text-primary">{players.length}</p>
+                  <p className="text-2xl font-bold">{players.length}</p>
+                  <p className="text-sm text-muted-foreground">Joueurs inscrits</p>
                 </div>
-                <Users className="h-12 w-12 text-primary/50" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <Users className="h-8 w-8 text-primary mr-4" />
                 <div>
-                  <p className="text-muted-foreground">Âge Moyen</p>
-                  <p className="text-3xl font-bold text-primary">
-                    {players.length > 0 
-                      ? Math.round(players.reduce((sum, p) => sum + p.age, 0) / players.length)
-                      : 0
-                    } ans
-                  </p>
+                  <p className="text-2xl font-bold">{players.filter(p => p.age <= 25).length}</p>
+                  <p className="text-sm text-muted-foreground">Jeunes (≤25 ans)</p>
                 </div>
-                <Calendar className="h-12 w-12 text-primary/50" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <Users2 className="h-8 w-8 text-primary mr-4" />
                 <div>
-                  <p className="text-muted-foreground">Statut</p>
-                  <p className="text-xl font-bold text-success">
-                    Inscriptions ouvertes
-                  </p>
+                  <p className="text-2xl font-bold">{players.filter(p => p.age > 25).length}</p>
+                  <p className="text-sm text-muted-foreground">Seniors (&gt;25 ans)</p>
                 </div>
-                <Trophy className="h-12 w-12 text-primary/50" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
 
-        {/* Filters */}
-        <Card className="shadow-lg mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filtres et recherche
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="search">Rechercher un joueur</Label>
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <Hash className="h-8 w-8 text-primary mr-4" />
+                <div>
+                  <p className="text-2xl font-bold">{teams.length}</p>
+                  <p className="text-sm text-muted-foreground">Équipes</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Search and Filters */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Recherche et filtres
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="search"
-                    placeholder="Nom ou prénom..."
+                    placeholder="Rechercher par nom, prénom ou téléphone..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="age-filter">Filtrer par âge</Label>
-                <select
-                  id="age-filter"
-                  value={ageFilter}
-                  onChange={(e) => setAgeFilter(e.target.value)}
-                  className="w-full p-2 border border-input rounded-md bg-background"
-                >
-                  <option value="">Tous les âges</option>
-                  <option value="young">Moins de 25 ans</option>
-                  <option value="middle">25-34 ans</option>
-                  <option value="older">35 ans et plus</option>
-                </select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                
+                <Select value={filterAge} onValueChange={setFilterAge}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tous les âges" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Tous les âges</SelectItem>
+                    <SelectItem value="young">Jeunes (≤25 ans)</SelectItem>
+                    <SelectItem value="senior">Seniors (&gt;25 ans)</SelectItem>
+                  </SelectContent>
+                </Select>
 
-        {/* Players List */}
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Liste des joueurs inscrits</span>
-              <Badge variant="secondary" className="text-lg px-3 py-1">
-                {filteredPlayers.length} joueur{filteredPlayers.length > 1 ? 's' : ''}
-              </Badge>
-            </CardTitle>
-            <CardDescription>
-              Gérez les inscriptions au tournoi
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filteredPlayers.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">
-                  {players.length === 0 ? "Aucun joueur inscrit" : "Aucun résultat"}
-                </h3>
-                <p className="text-muted-foreground">
-                  {players.length === 0 
-                    ? "Les inscriptions apparaîtront ici une fois que les joueurs se seront inscrits."
-                    : "Essayez de modifier vos critères de recherche."
-                  }
-                </p>
+                <Select value={filterTeam} onValueChange={setFilterTeam}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Toutes les équipes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Toutes les équipes</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterGroup} onValueChange={setFilterGroup}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tous les groupes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Tous les groupes</SelectItem>
+                    {groups.map((group) => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredPlayers.map((player) => {
-                  const ageGroup = getAgeGroup(player.age);
-                  return (
-                    <div
-                      key={player.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                          <span className="font-bold text-primary">
-                            {player.prenom[0]}{player.nom[0]}
-                          </span>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold">
-                            {player.prenom} {player.nom}
-                          </h4>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{player.age} ans</span>
-                            <Badge 
-                              className={`${ageGroup.color} text-white text-xs`}
-                            >
-                              {ageGroup.label}
-                            </Badge>
+            </CardContent>
+          </Card>
+
+          {/* Players Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Liste des joueurs</CardTitle>
+              <CardDescription>
+                {filteredPlayers.length} joueur{filteredPlayers.length > 1 ? 's' : ''} trouvé{filteredPlayers.length > 1 ? 's' : ''}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {filteredPlayers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Aucun joueur trouvé</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nom</TableHead>
+                      <TableHead>Prénom</TableHead>
+                      <TableHead>Âge</TableHead>
+                      <TableHead>Téléphone</TableHead>
+                      <TableHead>Équipe</TableHead>
+                      <TableHead>Groupe</TableHead>
+                      <TableHead>Date d'inscription</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPlayers.map((player) => (
+                      <TableRow key={player.id}>
+                        <TableCell className="font-medium">{player.nom}</TableCell>
+                        <TableCell>{player.prenom}</TableCell>
+                        <TableCell>
+                          <Badge variant={player.age <= 25 ? "default" : "secondary"}>
+                            {player.age} ans
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            {player.telephone}
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            Inscrit le {formatDate(player.dateInscription)}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-primary border-primary/20 hover:bg-primary/10"
-                        >
-                          <Edit className="h-4 w-4" />
-                          Modifier
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeletePlayer(player)}
-                          className="text-destructive border-destructive/20 hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Supprimer
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {player.teams?.name || "Non assigné"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {player.groups?.name || "Non assigné"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            {new Date(player.date_inscription).toLocaleDateString('fr-FR')}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(player.id, `${player.prenom} ${player.nom}`)}
+                          >
+                            <UserMinus className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
