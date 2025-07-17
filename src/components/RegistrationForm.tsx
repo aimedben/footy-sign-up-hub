@@ -38,30 +38,8 @@ export function RegistrationForm({ onPlayerAdded }: RegistrationFormProps) {
   const [prenom, setPrenom] = useState("");
   const [age, setAge] = useState("");
   const [telephone, setTelephone] = useState("");
-  const [teamId, setTeamId] = useState<string>("");
-  const [groupId, setGroupId] = useState<string>("");
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchTeamsAndGroups();
-  }, []);
-
-  const fetchTeamsAndGroups = async () => {
-    try {
-      const [teamsResult, groupsResult] = await Promise.all([
-        supabase.from('teams').select('*').order('name'),
-        supabase.from('groups').select('*').order('name')
-      ]);
-
-      if (teamsResult.data) setTeams(teamsResult.data);
-      if (groupsResult.data) setGroups(groupsResult.data);
-    } catch (error) {
-      console.error('Error fetching teams and groups:', error);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,6 +63,17 @@ export function RegistrationForm({ onPlayerAdded }: RegistrationFormProps) {
       return;
     }
 
+    // Validation du numéro de téléphone: 0 suivi de (5,6,7) puis 8 chiffres
+    const phoneRegex = /^0[567]\d{8}$/;
+    if (!phoneRegex.test(telephone.trim())) {
+      toast({
+        title: "Numéro invalide",
+        description: "Le téléphone doit commencer par 05, 06 ou 07 suivi de 8 chiffres",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -93,8 +82,8 @@ export function RegistrationForm({ onPlayerAdded }: RegistrationFormProps) {
         prenom: prenom.trim(),
         age: ageNumber,
         telephone: telephone.trim(),
-        team_id: teamId || null,
-        group_id: groupId || null,
+        team_id: null,
+        group_id: null,
       };
 
       const { data, error } = await supabase
@@ -128,8 +117,6 @@ export function RegistrationForm({ onPlayerAdded }: RegistrationFormProps) {
       setPrenom("");
       setAge("");
       setTelephone("");
-      setTeamId("");
-      setGroupId("");
     } catch (error) {
       console.error('Error inserting player:', error);
       toast({
@@ -219,50 +206,22 @@ export function RegistrationForm({ onPlayerAdded }: RegistrationFormProps) {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="telephone">Téléphone *</Label>
-                  <Input
-                    id="telephone"
-                    type="tel"
-                    placeholder="Votre numéro de téléphone"
-                    value={telephone}
-                    onChange={(e) => setTelephone(e.target.value)}
-                    required
-                    className="h-12"
-                  />
-                </div>
+                 <div className="space-y-2">
+                   <Label htmlFor="telephone">Téléphone *</Label>
+                   <Input
+                     id="telephone"
+                     type="tel"
+                     placeholder="Ex: 0612345678"
+                     value={telephone}
+                     onChange={(e) => setTelephone(e.target.value)}
+                     required
+                     className="h-12"
+                   />
+                   <p className="text-sm text-muted-foreground">
+                     Format: 05, 06 ou 07 suivi de 8 chiffres
+                   </p>
+                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="team">Équipe (optionnel)</Label>
-                  <Select value={teamId} onValueChange={setTeamId}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Choisir une équipe" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="group">Groupe (optionnel)</Label>
-                  <Select value={groupId} onValueChange={setGroupId}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Choisir un groupe" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {groups.map((group) => (
-                        <SelectItem key={group.id} value={group.id}>
-                          {group.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
 
                 <Button 
                   type="submit" 

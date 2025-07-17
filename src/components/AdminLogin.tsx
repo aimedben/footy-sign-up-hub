@@ -145,6 +145,13 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
               </Button>
             </form>
 
+            {/* Affichage des identifiants pour test */}
+            <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground text-center">
+                <strong>Identifiants de test:</strong><br />
+                admin / football2024
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
