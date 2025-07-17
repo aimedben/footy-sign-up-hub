@@ -33,12 +33,10 @@ interface Group {
 }
 
 interface AdminDashboardProps {
-  players: Player[];
-  onDeletePlayer: (playerId: string) => void;
   onLogout: () => void;
 }
 
-export function AdminDashboard({ players: initialPlayers, onDeletePlayer, onLogout }: AdminDashboardProps) {
+export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterAge, setFilterAge] = useState("");
   const [filterTeam, setFilterTeam] = useState("");
@@ -102,7 +100,6 @@ export function AdminDashboard({ players: initialPlayers, onDeletePlayer, onLogo
         if (error) throw error;
 
         setPlayers(prev => prev.filter(p => p.id !== playerId));
-        onDeletePlayer(playerId);
         toast({
           title: "Joueur supprimé",
           description: `${playerName} a été retiré du tournoi`,

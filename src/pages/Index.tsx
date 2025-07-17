@@ -60,8 +60,6 @@ const Index = () => {
       case "admin-dashboard":
         return (
           <AdminDashboard 
-            players={players}
-            onDeletePlayer={handleDeletePlayer}
             onLogout={handleAdminLogout}
           />
         );
