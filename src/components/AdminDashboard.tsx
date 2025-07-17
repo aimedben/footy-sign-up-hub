@@ -38,9 +38,9 @@ interface AdminDashboardProps {
 
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterAge, setFilterAge] = useState("");
-  const [filterTeam, setFilterTeam] = useState("");
-  const [filterGroup, setFilterGroup] = useState("");
+  const [filterAge, setFilterAge] = useState("all");
+  const [filterTeam, setFilterTeam] = useState("all");
+  const [filterGroup, setFilterGroup] = useState("all");
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -79,12 +79,12 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       player.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.telephone.includes(searchTerm);
     
-    const matchesAge = filterAge === "" || 
+    const matchesAge = filterAge === "all" || 
       (filterAge === "young" && player.age <= 25) ||
       (filterAge === "senior" && player.age > 25);
     
-    const matchesTeam = filterTeam === "" || player.team_id === filterTeam;
-    const matchesGroup = filterGroup === "" || player.group_id === filterGroup;
+    const matchesTeam = filterTeam === "all" || player.team_id === filterTeam;
+    const matchesGroup = filterGroup === "all" || player.group_id === filterGroup;
     
     return matchesSearch && matchesAge && matchesTeam && matchesGroup;
   });
@@ -214,7 +214,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <SelectValue placeholder="Tous les âges" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous les âges</SelectItem>
+                    <SelectItem value="all">Tous les âges</SelectItem>
                     <SelectItem value="young">Jeunes (≤25 ans)</SelectItem>
                     <SelectItem value="senior">Seniors (&gt;25 ans)</SelectItem>
                   </SelectContent>
@@ -225,7 +225,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <SelectValue placeholder="Toutes les équipes" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Toutes les équipes</SelectItem>
+                    <SelectItem value="all">Toutes les équipes</SelectItem>
                     {teams.map((team) => (
                       <SelectItem key={team.id} value={team.id}>
                         {team.name}
@@ -239,7 +239,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <SelectValue placeholder="Tous les groupes" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous les groupes</SelectItem>
+                    <SelectItem value="all">Tous les groupes</SelectItem>
                     {groups.map((group) => (
                       <SelectItem key={group.id} value={group.id}>
                         {group.name}
