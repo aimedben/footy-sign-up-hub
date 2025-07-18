@@ -121,25 +121,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   // Reset Teams Button
-  function ResetTeamsButton() {
-    const resetTeams = async () => {
-      if (!window.confirm("Voulez-vous vraiment remettre tous les joueurs sans équipe ?")) return;
-      // mise à jour locale
-      setPlayers(prev => prev.map(p => ({ ...p, team_id: undefined, teams: { name: "" } })));
-      const { error } = await supabase.from("players").update({ team_id: null }).not("team_id", "is", null);
-      if (error) {
-        toast({ title: "Erreur", description: "Impossible de réinitialiser.", variant: "destructive" });
-        handleTeamsGenerated();
-        return;
-      }
-      toast({ title: "Équipes réinitialisées", description: "Tous les joueurs sont maintenant sans équipe." });
-    };
-    return (
-      <Button variant="destructive" onClick={resetTeams}>
-        Réinitialiser les équipes
-      </Button>
-    );
-  }
+
 
   // Filtrage
   const filteredPlayers = players.filter(p => {
@@ -233,7 +215,6 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         {/* Actions */}
         <div className="flex flex-col sm:flex-row items-start gap-4 mb-6">
           <AutoTeamGenerator onTeamsGenerated={handleTeamsGenerated} />
-          <ResetTeamsButton />
           <Button onClick={exportToCSV} disabled={loadingExport} className="mt-0">
             <Download className="mr-2 h-4 w-4" />
             {loadingExport ? "Export en cours..." : "Télécharger CSV"}
@@ -337,14 +318,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       <TableCell>{p.prenom}</TableCell>
                       <TableCell>
                         <Badge
-                          variant={
+                          className={
                             p.age >= 18 && p.age <= 25
-                              ? "default"
+                              ? "bg-green-100 text-green-800"
                               : p.age >= 26 && p.age <= 35
-                              ? "secondary"
-                              : p.age >= 36 && p.age <= 50
-                              ? "destructive"
-                              : "outline"
+                                ? "bg-blue-100 text-blue-800"
+                                : p.age >= 36 && p.age <= 50
+                                  ? "bg-orange-100 text-orange-800"
+                                  : "bg-gray-100 text-gray-700"
                           }
                         >
                           {p.age} ans
