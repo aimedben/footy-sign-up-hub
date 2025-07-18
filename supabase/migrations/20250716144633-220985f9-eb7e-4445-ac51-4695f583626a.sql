@@ -89,3 +89,14 @@ CREATE TRIGGER update_players_updated_at
 BEFORE UPDATE ON public.players
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
+
+
+ALTER TABLE players ADD COLUMN paiement boolean DEFAULT false;
+
+-- Autorise tout utilisateur authentifié à insérer dans teams
+CREATE POLICY "Allow insert for authenticated users"
+  ON teams
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+

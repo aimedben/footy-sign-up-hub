@@ -2,31 +2,32 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Lock, Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminLoginProps {
   onLogin: (success: boolean) => void;
 }
 
 export function AdminLogin({ onLogin }: AdminLoginProps) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("admin@gmail.com"); // pré-rempli pour test
+  const [password, setPassword] = useState("football2025");   // pré-rempli pour test
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Identifiants temporaires (à remplacer par Supabase Auth plus tard)
-  const ADMIN_CREDENTIALS = {
-    username: "admin",
-    password: "football2024"
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!username || !password) {
+
+    if (!email || !password) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs",
@@ -37,43 +38,37 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
 
     setIsLoading(true);
 
-    try {
-      // Simulation d'une vérification
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-        toast({
-          title: "Connexion réussie",
-          description: "Bienvenue dans l'espace administrateur",
-        });
-        onLogin(true);
-      } else {
-        toast({
-          title: "Erreur de connexion",
-          description: "Nom d'utilisateur ou mot de passe incorrect",
-          variant: "destructive",
-        });
-        onLogin(false);
-      }
-    } catch (error) {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
       toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de la connexion",
+        title: "Erreur de connexion",
+        description: error.message || "Identifiants incorrects",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      onLogin(false);
+    } else {
+      toast({
+        title: "Connexion réussie",
+        description: "Bienvenue dans l'espace administrateur",
+      });
+      onLogin(true);
     }
+
+    setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/5">
-      <div className="w-full max-w-md px-4">
-        <Card className="shadow-xl border-0 bg-card/95 backdrop-blur">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-green-100 to-accent/5 flex items-center justify-center">
+      <div className="w-full max-w-md px-4 animate-fade-in">
+        <Card className="shadow-xl border-0 bg-gradient-to-br from-blue-50 to-green-50 backdrop-blur">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
               <div className="p-4 bg-primary/10 rounded-full">
-                <Shield className="h-12 w-12 text-primary" />
+                <Shield className="h-12 w-12 text-primary animate-pulse" />
               </div>
             </div>
             <CardTitle className="text-2xl font-bold">Administration</CardTitle>
@@ -81,22 +76,22 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
               Connectez-vous pour accéder à l'espace administrateur
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="username">Nom d'utilisateur</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Votre nom d'utilisateur"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="admin@gmail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="h-12"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Mot de passe</Label>
                 <div className="relative">
@@ -116,42 +111,25 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
                     className="absolute right-2 top-2 h-8 w-8 p-0"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-12 text-lg"
-                variant="hero"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full h-12 text-lg" variant="hero" disabled={isLoading}>
                 {isLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-2"></div>
                     Connexion...
                   </>
                 ) : (
                   <>
-                    <Lock className="h-5 w-5" />
+                    <Lock className="h-5 w-5 mr-2" />
                     Se connecter
                   </>
                 )}
               </Button>
             </form>
-
-            {/* Affichage des identifiants pour test */}
-            <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-              <p className="text-sm text-muted-foreground text-center">
-                <strong>Identifiants de test:</strong><br />
-                admin / football2024
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>

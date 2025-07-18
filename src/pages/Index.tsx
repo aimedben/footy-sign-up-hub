@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { AdminLogin } from "@/components/AdminLogin";
-import { Settings, UserCheck } from "lucide-react";
+import { Link, Phone, Settings, UserCheck } from "lucide-react";
 
 interface Player {
   id: string;
@@ -101,8 +101,12 @@ const Index = () => {
 
       {/* Current View */}
       {renderCurrentView()}
+
     </div>
+    
   );
 };
+
+
 
 export default Index;

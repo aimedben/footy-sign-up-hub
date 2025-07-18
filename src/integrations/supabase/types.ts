@@ -44,6 +44,7 @@ export type Database = {
           team_id: string | null
           telephone: string
           updated_at: string
+          paye: boolean;
         }
         Insert: {
           age: number
@@ -56,6 +57,7 @@ export type Database = {
           team_id?: string | null
           telephone: string
           updated_at?: string
+          paye?: boolean;
         }
         Update: {
           age?: number
@@ -67,6 +69,7 @@ export type Database = {
           prenom?: string
           team_id?: string | null
           telephone?: string
+          paye?: boolean;
           updated_at?: string
         }
         Relationships: [
