@@ -1,5 +1,5 @@
 [build]
-nixpacksPlan = "python"
+nixpacksPlan = { language = "python" }
 
 [start]
 cmd = "python3 app.py"
