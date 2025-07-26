@@ -4,6 +4,8 @@ import { RegistrationForm } from "@/components/RegistrationForm";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { AdminLogin } from "@/components/AdminLogin";
 import { Link, Phone, Settings, UserCheck } from "lucide-react";
+import Navbar from "@/components/ui/navbar";
+import TournamentBracket from "@/components/Tournoi";
 
 interface Player {
   id: string;
@@ -13,10 +15,18 @@ interface Player {
   telephone: string;
   team_id?: string;
   group_id?: string;
+  goals?: number;
+  assists?: number;
+  matches_played?: number;
+  yellow_cards?: number;
+  red_cards?: number;
+
   date_inscription: string;
 }
 
-type ViewMode = "registration" | "admin-login" | "admin-dashboard";
+
+
+type ViewMode = "registration" | "admin-login" | "admin-dashboard" | "tournament" | "profil" | "Planning";
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<ViewMode>("registration");
@@ -44,63 +54,37 @@ const Index = () => {
   };
 
   const renderCurrentView = () => {
-    switch (currentView) {
-      case "registration":
-        return (
-          <RegistrationForm 
-            onPlayerAdded={handlePlayerAdded}
-          />
-        );
-      case "admin-login":
-        return (
-          <AdminLogin 
-            onLogin={handleAdminLogin}
-          />
-        );
-      case "admin-dashboard":
-        return (
-          <AdminDashboard 
-            onLogout={handleAdminLogout}
-          />
-        );
-      default:
-        return null;
-    }
+  switch (currentView) {
+    case "registration":
+      return <RegistrationForm onPlayerAdded={handlePlayerAdded} />;
+    case "admin-login":
+      return <AdminLogin onLogin={handleAdminLogin} />;
+    case "admin-dashboard":
+      return <AdminDashboard onLogout={handleAdminLogout} />;
+    case "tournament":
+      return <TournamentBracket />;
+    case "Planning":
+  return <div className="text-white p-8 text-center">Page Planning à venir...</div>;
+case "profil":
+  return <div className="text-white p-8 text-center">Page Profil à venir...</div>;
+
+    default:
+      return null;
+  }
   };
 
   return (
     <div className="relative">
-      {/* Navigation Toggle */}
-      {currentView !== "admin-dashboard" && (
-        <div className="fixed top-4 right-4 z-50">
-          <Button
-            onClick={() => {
-              if (currentView === "registration") {
-                setCurrentView("admin-login");
-              } else if (currentView === "admin-login") {
-                setCurrentView("registration");
-              }
-            }}
-            variant="outline"
-            className="bg-background/95 backdrop-blur shadow-lg"
-          >
-            {currentView === "registration" ? (
-              <>
-                <Settings className="h-4 w-4 mr-2" />
-                Administration
-              </>
-            ) : (
-              <>
-                <UserCheck className="h-4 w-4 mr-2" />
-                Inscription
-              </>
-            )}
-          </Button>
-        </div>
-      )}
+      <div className="relative">
+  {/* Navbar avec vue dynamique */}
+  <Navbar currentView={currentView} setCurrentView={setCurrentView} />
 
-      {/* Current View */}
-      {renderCurrentView()}
+  {/* Current View */}
+  <div> {/* décale pour ne pas être caché */}
+    {renderCurrentView()}
+  </div>
+</div>
+
 
     </div>
     

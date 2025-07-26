@@ -6,6 +6,28 @@
 All colors MUST be HSL.
 */
 
+.rotate-x-180 {
+  transform: rotateX(180deg);
+}
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+.rotate-z-180 {
+  transform: rotateZ(180deg);
+}
+
+.rotate-x-360 {
+  transform: rotateX(360deg);
+}
+.rotate-y-360 {
+  transform: rotateY(360deg);
+}
+.rotate-z-360 {
+  transform: rotateZ(360deg);
+}
+
+
+
 @layer base {
   :root {
     --background: 0 0% 100%;

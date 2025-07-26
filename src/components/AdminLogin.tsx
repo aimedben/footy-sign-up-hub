@@ -12,6 +12,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Lock, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface AdminLoginProps {
   onLogin: (success: boolean) => void;
@@ -19,9 +20,10 @@ interface AdminLoginProps {
 
 export function AdminLogin({ onLogin }: AdminLoginProps) {
   const [email, setEmail] = useState("admin@gmail.com"); // pré-rempli pour test
-  const [password, setPassword] = useState("football2025");   // pré-rempli pour test
+  const [password, setPassword] = useState("");   // pré-rempli pour test
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,6 +58,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
         description: "Bienvenue dans l'espace administrateur",
       });
       onLogin(true);
+      navigate("/admin-dashboard");
     }
 
     setIsLoading(false);
